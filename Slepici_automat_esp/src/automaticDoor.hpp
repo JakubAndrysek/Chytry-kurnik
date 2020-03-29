@@ -5,6 +5,8 @@
 #include <Wire.h> 
 #include <RtcDS3231.h>
 
+//#include <DNSServer>
+
 #define EN 25
 #define IN1 26
 #define IN2 27
@@ -19,6 +21,10 @@ class AutomaticDoor : public L298N, public RtcDS3231<TwoWire>, public RtcDateTim
         int _timeLast;
         bool _openState;
         bool _closeState;
+        
+
+
+        
 
 
     public:
@@ -30,5 +36,6 @@ class AutomaticDoor : public L298N, public RtcDS3231<TwoWire>, public RtcDateTim
         bool timeToOpen();
         bool timeToClose();
         void printDateTime();
+
     
 };

@@ -19,13 +19,14 @@ AutomaticDoor::AutomaticDoor(int open, int close, int tMove) : L298N(EN, IN1, IN
     _tMove = tMove*1000;
     _openState = false;
     _closeState = false;
+
+
 }
 
 void AutomaticDoor::begin()
 {
     _timeLast = getTime();
-    setSpeed(255);
-    
+    setSpeed(255);  
 }
 
 
@@ -106,5 +107,10 @@ void AutomaticDoor::printDateTime()
 			dt.Minute(),
 			dt.Second() );
     Serial.println(datestring);
+}
+
+void changeOpenTime(int hour, int minute)
+{
+    
 }
 
