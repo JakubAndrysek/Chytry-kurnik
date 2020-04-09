@@ -1,6 +1,7 @@
 #include "automaticDoor.hpp"
 #include <Arduino.h>
-#include <string> 
+#include <string>
+#include <EEPROM.h> 
 
 
 /**
@@ -12,20 +13,23 @@
  */ 
 
 
-AutomaticDoor::AutomaticDoor(int hourOpen, int minuteOpen, int hourClose, int minuteClose , int tMove) :  RtcDS3231<TwoWire>(Wire)
+AutomaticDoor::AutomaticDoor(int tMove) :  RtcDS3231<TwoWire>(Wire)
 {
     Begin(); //RTC begin
-    _hourOpen = hourOpen;
-    _minuteOpen = minuteOpen;
-    _hourClose = hourClose;
-    _minuteClose = minuteClose;
     _tMove = tMove*1000;
     _openState = false;
     _closeState = false;
     pinMode(RELAY_A, OUTPUT);
     pinMode(RELAY_B, OUTPUT);
     digitalWrite(RELAY_A, true);
-    digitalWrite(RELAY_B, true);    
+    digitalWrite(RELAY_B, true); 
+    if (!EEPROM.begin(EEPROM_SIZE))
+    {
+        Serial.println("failed to initialise EEPROM");
+    }
+    delay(500);
+    
+   
 
 }
 
@@ -33,16 +37,40 @@ void AutomaticDoor::begin()
 {
     _minuteLast = getMinute();
     _hourLast = getHour();
+    readEEP();
+
+    // Serial.println(EEPROM.read(EEoH));
+    // delay(1000);
+    // Serial.println(EEPROM.read(EEoM));
+    // Serial.print("EE");
+    // Serial.println(EEPROM.read(0));
+    // Serial.println(EEPROM.read(1));    
+}
+
+void AutomaticDoor::readEEP()
+{
+    _hourOpen = EEPROM.read(EEoH);
+    _minuteOpen = EEPROM.read(EEoM);
+    _hourClose = EEPROM.read(EEcH);
+    _minuteClose = EEPROM.read(EEcM); 
+    Serial.println(EEPROM.read(0));
+    Serial.println(EEPROM.read(1));        
 }
 
 
 int AutomaticDoor::getHour()
 {
     RtcDateTime dt = GetDateTime();
-    return dt.Minute();
+    return dt.Hour();
 }
 
 int AutomaticDoor::getMinute()
+{
+    RtcDateTime dt = GetDateTime();
+    return dt.Minute();
+}
+
+int AutomaticDoor::getSecond()
 {
     RtcDateTime dt = GetDateTime();
     return dt.Second();
@@ -51,17 +79,61 @@ int AutomaticDoor::getMinute()
 void AutomaticDoor::open()
 {
     Serial.println("Opening");
-    rUp();
-    delay(_tMove);
-    rStop();
+    // rUp();
+    // delay(_tMove);
+    // rStop();
+
+
+    switch (oState)
+    {
+    case 0:
+        oTime = millis()/1000; //to seconds
+        oState++;   //next state
+        break;
+    case 1:
+        rUp();
+        delay(_tMove);
+        rStop();
+        oState++;
+        break;
+    
+    case 2:
+        if(millis()/1000-oTime>60)    //for one door opening
+        {
+            oState = 0;
+        }
+        break;
+    }
 }
 
 void AutomaticDoor::close()
 {
     Serial.println("Closeing");
-    rDown();
-    delay(_tMove);
-    rStop();
+    // rDown();
+    // delay(_tMove);
+    // rStop();
+
+    switch (cState)
+    {
+    case 0:
+        cTime = millis()/1000; //to seconds
+        cState++;   //next state
+        break;
+    case 1:
+        rDown();
+        delay(_tMove);
+        rStop();
+        cState++;
+        break;
+    
+    case 2:
+        if(millis()/1000-cTime>60)    //for one door opening
+        {
+            cState = 0;
+        }
+        break;
+    }
+
 }
 
 bool AutomaticDoor::timeToOpen()
@@ -116,27 +188,45 @@ void AutomaticDoor::printDateTime()
 
     _minuteNow = getMinute();
     _hourNow = getHour();
-    Serial.printf("Now-H%d M%d; Open-H%d M%d; Close-H%d M%d\n", _hourNow,_minuteNow,_hourOpen,_minuteOpen,_hourClose,_minuteClose);
+    _secondNow = getSecond();
+    Serial.printf("Now-H%d M%d S%d; Open-H%d M%d; Close-H%d M%d\n", _hourNow,_minuteNow, _secondNow,_hourOpen,_minuteOpen,_hourClose,_minuteClose);
 }
 
 void AutomaticDoor::setHourOpen(int hour)
 {
-    _hourOpen = hour;
+    //_hourOpen = hour;
+    EEPROM.write(EEoH, hour);
+    EEPROM.commit();
+    _hourOpen = EEPROM.read(EEoH);
 }
 
 void AutomaticDoor::setMinuteOpen(int minute)
 {
-    _minuteOpen = minute;
+    //_minuteOpen = minute;
+    EEPROM.write(EEoM, minute);
+    EEPROM.commit();
+    _minuteOpen = EEPROM.read(EEoM);
 }
 
 void AutomaticDoor::setHourClose(int hour)
 {
     _hourClose = hour;
+    EEPROM.write(EEcH, hour);
+    EEPROM.commit();
+
 }
 
 void AutomaticDoor::setMinuteClose(int minute)
 {
     _minuteClose = minute;
+    EEPROM.write(EEcM, minute);
+    EEPROM.commit();
+
+}
+
+void AutomaticDoor::setActualTime(int hour, int minute)
+{
+    SetDateTime(RtcDateTime(2020,1,30,hour,minute,0));
 }
 
 void AutomaticDoor::setMove(int tMove)
@@ -146,12 +236,12 @@ void AutomaticDoor::setMove(int tMove)
 
 String AutomaticDoor::getTimeOpen()
 {
-    return String(_hourOpen) + ":" + String(_minuteOpen);
+    return String(EEPROM.read(EEoH)) + ":" + String(EEPROM.read(EEoM));
 }
 
 String AutomaticDoor::getTimeClose()
 {
-    return String(_hourClose) + ":" + String(_minuteClose);
+    return String(EEPROM.read(EEcH)) + ":" + String(EEPROM.read(EEcM));
 }
 
 String AutomaticDoor::getMove()
@@ -177,4 +267,9 @@ void AutomaticDoor::rStop()
 {
     digitalWrite(RELAY_A, true);
     digitalWrite(RELAY_B, true);
+}
+
+int AutomaticDoor::ret()
+{
+    return EEPROM.read(EEoH);
 }

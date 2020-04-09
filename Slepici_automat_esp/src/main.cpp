@@ -4,6 +4,8 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
+#include <EEPROM.h>
+
 
 const char* ssid = "Kurnik";
 const char* password = "NaseSlepice";
@@ -12,8 +14,14 @@ const char* OpenH = "open-h";
 const char* OpenM = "open-m";
 const char* CloseH = "close-h";
 const char* CloseM = "close-m";
+
 const char* Move = "move";
 
+
+AutomaticDoor dvere(5);
+
+AsyncWebServer server(80);
+DNSServer gDnsServer;
 
 
 // HTML web page to handle 3 input fields (input1, input2, input3)
@@ -48,6 +56,16 @@ const char index_html[] PROGMEM = R"rawliteral(
       <input type="submit" value="Submit">
     </form><br>
 
+    <h3>Aktuální čas:</h3>
+    <form action="/get">
+      Hodiny: <input type="number" name="act-h">
+      <br>
+      Minuty: <input type="number" name="act-m">
+      <br>
+      <br>
+      <input type="submit" value="Submit">
+    </form><br>    
+
     <h3>Doba otevíráni/zavírání</h3>
     <form action="/get">
       Vteřin: <input type="number" name="move">
@@ -58,9 +76,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   </body></html>
 )rawliteral";
 
-AutomaticDoor dvere(8,20, 8, 35,5);
-AsyncWebServer server(80);
-DNSServer gDnsServer;
+
 
 int stoi(String s)
 {
@@ -114,26 +130,33 @@ void serverRun()
   server.begin();  
 }
 
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Start");
   
-
+  EEPROM.begin(EEPROM_SIZE);
   dvere.begin();
+  
 
   WiFi.softAP(ssid, password);
   Serial.println();
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
-  gDnsServer.start(53, "*", WiFi.softAPIP());
+
 
   dvere.printDateTime();
 
-  delay(2000);
-  dvere.setHourClose(32);
-  dvere.setMinuteClose(1);
+  //dvere.setActualTime(20, 30);
 
-  
+  // dvere.setHourOpen(17);
+  // dvere.setMinuteOpen(35);
+  // dvere.setHourClose(19);
+  // dvere.setMinuteClose(51);
+  //Serial.println(dvere.ret());
+
+
+  //dvere.readEEP();
 
 
 }
@@ -160,8 +183,7 @@ void loop() {
     Serial.println("Close function");
   }
 
-  serverRun();
-  gDnsServer.processNextRequest();
+   serverRun();
 
 
 

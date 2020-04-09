@@ -53,7 +53,9 @@ void setup ()
     
     Rtc.Begin();
 
-    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    //RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    RtcDateTime compiled = RtcDateTime(2020,1,30,20,16,0);
+    Rtc.SetDateTime(RtcDateTime(2020,1,30,20,1,0));
     printDateTime(compiled);
     Serial.println();
 
@@ -79,7 +81,7 @@ void setup ()
             // it will also reset the valid flag internally unless the Rtc device is
             // having an issue
 
-            Rtc.SetDateTime(compiled);
+            //Rtc.SetDateTime(compiled);
         }
     }
 
@@ -93,11 +95,12 @@ void setup ()
     if (now < compiled) 
     {
         Serial.println("RTC is older than compile time!  (Updating DateTime)");
-        Rtc.SetDateTime(compiled);
+        //Rtc.SetDateTime(compiled);
     }
     else if (now > compiled) 
     {
         Serial.println("RTC is newer than compile time. (this is expected)");
+        //Rtc.SetDateTime(compiled);
     }
     else if (now == compiled) 
     {
