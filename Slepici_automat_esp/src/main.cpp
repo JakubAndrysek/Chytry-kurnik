@@ -14,6 +14,8 @@ const char* OpenH = "open-h";
 const char* OpenM = "open-m";
 const char* CloseH = "close-h";
 const char* CloseM = "close-m";
+const char* ActualH = "act-h";
+const char* ActualM = "act-m";
 
 const char* Move = "move";
 
@@ -91,9 +93,34 @@ void notFound(AsyncWebServerRequest *request) {
 void serverRun()
 {
   // Send web page with input fields to client
+  /*
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html);
   });
+*/
+  //String time_web = "<h1>" + String(dvere.getHour)+":"+String(dvere.getMinute)+"</h1><p><a href=\"/\">Zpet</p>";
+
+/*
+  server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request){
+    AsyncResponseStream *response = request->beginResponseStream("text/plain");
+    response->printf("Cas\n%d:%d", dvere.getHour,5);
+
+  });  
+*/
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+      // "Streamovaná" odpověď, zapisuje se průběžně.
+      AsyncResponseStream *response = request->beginResponseStream("text/html");
+      int h = dvere.getHour();
+      int m = dvere.getMinute();
+      response->printf("<h3>%d:%d</h3>", h, m);
+      response->printf("Cas od zapnuti %d",(int(millis()/1000))); 
+      response->println(index_html);   
+
+
+      request->send(response);
+    });
+
 
   // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
   server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
@@ -113,6 +140,13 @@ void serverRun()
       Serial.println(CloseH);
       Serial.println(dvere.getTimeClose());
     }
+    else if (request->hasParam(ActualH)) {
+      int h = (stoi(request->getParam(ActualH)->value()));
+      int m = (stoi(request->getParam(ActualM)->value()));
+      dvere.setActualTime(h, m);
+      Serial.println(ActualH);
+      Serial.printf("%d:%d",h, m);
+    }    
     // GET input3 value on <ESP_IP>/get?input3=<inputMessage>
     else if (request->hasParam(Move)) {
       dvere.setMove(stoi(request->getParam(Move)->value()));
