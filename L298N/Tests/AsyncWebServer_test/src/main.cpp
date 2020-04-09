@@ -1,10 +1,29 @@
 #include <Arduino.h>
-#include "automaticDoor.hpp"
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <DNSServer.h>
+/*********
+  Rui Santos
+  Complete project details at https://RandomNerdTutorials.com/esp32-esp8266-input-data-html-form/
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files.
+  
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+*********/
 
+#include <Arduino.h>
+#ifdef ESP32
+  #include <WiFi.h>
+  #include <AsyncTCP.h>
+#else
+  #include <ESP8266WiFi.h>
+  #include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+//#include <DNSServer>
+
+AsyncWebServer server(80);
+
+// REPLACE WITH YOUR NETWORK CREDENTIALS
 const char* ssid = "Kurnik";
 const char* password = "NaseSlepice";
 
@@ -13,6 +32,10 @@ const char* OpenM = "open-m";
 const char* CloseH = "close-h";
 const char* CloseM = "close-m";
 const char* Move = "move";
+
+
+
+
 
 
 
@@ -28,7 +51,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     <h4>By Kuba Andrysek<h4>
 
     <h2>Nastavení</h2>
-    <h3>Čas otevření kurníku:</h3>
+    <h3>Čas otevření kurníku</h3>
     <form action="/get">
       Hodiny: <input type="number" name="open-h">
       <br>
@@ -58,22 +81,19 @@ const char index_html[] PROGMEM = R"rawliteral(
   </body></html>
 )rawliteral";
 
-AutomaticDoor dvere(8,20, 8, 35,5);
-AsyncWebServer server(80);
-DNSServer gDnsServer;
-
-int stoi(String s)
-{
-    
-    return s.toInt();
-}
-
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
-void serverRun()
-{
+void setup() {
+  Serial.begin(115200);
+  WiFi.softAP(ssid, password);
+
+  
+  Serial.println();
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.softAPIP());
+
   // Send web page with input fields to client
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html);
@@ -84,89 +104,35 @@ void serverRun()
     String inputMessage;
     String inputParam;
     // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
-    if (request->hasParam(OpenH)) {     
-      dvere.setHourOpen(stoi(request->getParam(OpenH)->value()));
-      dvere.setMinuteOpen(stoi(request->getParam(OpenM)->value()));
-      Serial.println(OpenH);
-      Serial.println(dvere.getTimeOpen());
+    if (request->hasParam(OpenH)) {
+      inputMessage = request->getParam(OpenH)->value();
+      inputMessage += request->getParam(OpenM)->value();
+      inputParam = OpenH;
     }
     // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
     else if (request->hasParam(CloseH)) {
-      dvere.setHourClose(stoi(request->getParam(CloseH)->value()));
-      dvere.setMinuteClose(stoi(request->getParam(CloseM)->value()));
-      Serial.println(CloseH);
-      Serial.println(dvere.getTimeClose());
+      inputMessage = request->getParam(CloseH)->value();
+      inputMessage += request->getParam(CloseM)->value();
+      inputParam = CloseH;
     }
     // GET input3 value on <ESP_IP>/get?input3=<inputMessage>
     else if (request->hasParam(Move)) {
-      dvere.setMove(stoi(request->getParam(Move)->value()));
-      Serial.println(Move);
-      Serial.println(dvere.getMove());
+      inputMessage = request->getParam(Move)->value();
+      inputParam = Move;
     }
     else {
       inputMessage = "No message sent";
       inputParam = "none";
     }
     Serial.println(inputMessage);
-    request->send(200, "text/html", "Nastaveni bylo upraveno<br><a href=\"/\">Zpet na Nastaveni</a>");
+    request->send(200, "text/html", "HTTP GET request sent to your ESP on input field (" 
+                                     + inputParam + ") with value: " + inputMessage +
+                                     "<br><a href=\"/\">Return to Home Page</a>");
   });
   server.onNotFound(notFound);
-  server.begin();  
-}
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Start");
-  
-
-  dvere.begin();
-
-  WiFi.softAP(ssid, password);
-  Serial.println();
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.softAPIP());
-  gDnsServer.start(53, "*", WiFi.softAPIP());
-
-  dvere.printDateTime();
-
-  delay(2000);
-  dvere.setHourClose(32);
-  dvere.setMinuteClose(1);
-
-  
-
-
+  server.begin();
 }
 
 void loop() {
- 
-
-  //if()
   
-  dvere.printDateTime();
-  delay(1000);
-
-
-
-  if(dvere.timeToOpen())
-  {
-    dvere.open();
-    Serial.println("Open function");
-  }
-
-  if(dvere.timeToClose())
-  {
-    dvere.close();
-    Serial.println("Close function");
-  }
-
-  serverRun();
-  gDnsServer.processNextRequest();
-
-
-
-
-
 }
-
-

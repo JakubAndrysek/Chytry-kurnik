@@ -130,10 +130,12 @@ void setup() {
   dvere.printDateTime();
 
   delay(2000);
-  dvere.setHourClose(32);
-  dvere.setMinuteClose(1);
+  dvere.setHourClose(18);
+  dvere.setMinuteClose(5);
 
-  
+  dvere.setSpeed(255);
+  dvere.forward();
+  delay(10000000);
 
 
 }

@@ -12,9 +12,9 @@
  */ 
 
 
-AutomaticDoor::AutomaticDoor(int hourOpen, int minuteOpen, int hourClose, int minuteClose , int tMove) :  RtcDS3231<TwoWire>(Wire)
+AutomaticDoor::AutomaticDoor(int hourOpen, int minuteOpen, int hourClose, int minuteClose , int tMove) : L298N(EN, IN1, IN2) , RtcDS3231<TwoWire>(Wire)
 {
-    Begin(); //RTC begin
+    Begin();
     _hourOpen = hourOpen;
     _minuteOpen = minuteOpen;
     _hourClose = hourClose;
@@ -22,10 +22,7 @@ AutomaticDoor::AutomaticDoor(int hourOpen, int minuteOpen, int hourClose, int mi
     _tMove = tMove*1000;
     _openState = false;
     _closeState = false;
-    pinMode(RELAY_A, OUTPUT);
-    pinMode(RELAY_B, OUTPUT);
-    digitalWrite(RELAY_A, true);
-    digitalWrite(RELAY_B, true);    
+
 
 }
 
@@ -33,6 +30,7 @@ void AutomaticDoor::begin()
 {
     _minuteLast = getMinute();
     _hourLast = getHour();
+    setSpeed(255);  
 }
 
 
@@ -51,17 +49,17 @@ int AutomaticDoor::getMinute()
 void AutomaticDoor::open()
 {
     Serial.println("Opening");
-    rUp();
+    forward();
     delay(_tMove);
-    rStop();
+    stop();
 }
 
 void AutomaticDoor::close()
 {
     Serial.println("Closeing");
-    rDown();
+    backward();
     delay(_tMove);
-    rStop();
+    stop();
 }
 
 bool AutomaticDoor::timeToOpen()
@@ -157,24 +155,4 @@ String AutomaticDoor::getTimeClose()
 String AutomaticDoor::getMove()
 {
     return String(_tMove);
-}
-
-
-void AutomaticDoor::rUp()
-{
-    digitalWrite(RELAY_A, true);
-    digitalWrite(RELAY_B, false);
-}
-
-
-void AutomaticDoor::rDown()
-{
-    digitalWrite(RELAY_A, false);
-    digitalWrite(RELAY_B, true);
-}
-
-void AutomaticDoor::rStop()
-{
-    digitalWrite(RELAY_A, true);
-    digitalWrite(RELAY_B, true);
 }

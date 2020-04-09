@@ -1,16 +1,17 @@
 #pragma once
 
 #include <Arduino.h>
+#include <L298N.h>
 #include <Wire.h> 
 #include <RtcDS3231.h>
 
 //#include <DNSServer>
 
+#define EN 34
+#define IN1 35
+#define IN2 32
 
-#define RELAY_A 32
-#define RELAY_B 33
-
-class AutomaticDoor : public RtcDS3231<TwoWire>, public RtcDateTime
+class AutomaticDoor : public L298N, public RtcDS3231<TwoWire>, public RtcDateTime
 {
     private:
         int _hourOpen;
@@ -44,9 +45,6 @@ class AutomaticDoor : public RtcDS3231<TwoWire>, public RtcDateTime
         String getTimeOpen();
         String getTimeClose();
         String getMove();
-        void rUp();
-        void rDown();
-        void rStop();
 
     
 };
