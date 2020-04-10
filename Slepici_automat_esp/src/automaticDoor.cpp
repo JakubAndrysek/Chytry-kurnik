@@ -183,7 +183,7 @@ void AutomaticDoor::printDateTime()
 void AutomaticDoor::setHourOpen(int hour)
 {
     //_hourOpen = hour;
-    dprintf("SetOpenH");
+    dprintf("SetOpenH-%d", hour);
     EEPROM.write(EEoH, hour);
     EEPROM.commit();
     _hourOpen = EEPROM.read(EEoH);
@@ -192,7 +192,7 @@ void AutomaticDoor::setHourOpen(int hour)
 void AutomaticDoor::setMinuteOpen(int minute)
 {
     //_minuteOpen = minute;
-    dprintf("SetOpenM");
+    dprintf("SetOpenM-%d", minute);
     EEPROM.write(EEoM, minute);
     EEPROM.commit();
     _minuteOpen = EEPROM.read(EEoM);
@@ -201,7 +201,7 @@ void AutomaticDoor::setMinuteOpen(int minute)
 void AutomaticDoor::setHourClose(int hour)
 {
     //_hourClose = hour;
-    dprintf("SetCloseH");
+    dprintf("SetCloseH-%d", hour);
     EEPROM.write(EEcH, hour);
     EEPROM.commit();
     _hourClose = EEPROM.read(EEoM);
@@ -211,7 +211,7 @@ void AutomaticDoor::setHourClose(int hour)
 void AutomaticDoor::setMinuteClose(int minute)
 {
     //_minuteClose = minute;
-    dprintf("SetCloseM");
+    dprintf("SetCloseM-%d", minute);
     EEPROM.write(EEcM, minute);
     EEPROM.commit();
     _minuteClose = EEPROM.read(EEcM);

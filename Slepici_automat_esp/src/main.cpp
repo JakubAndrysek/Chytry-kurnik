@@ -32,15 +32,7 @@ int WebTime = 50;
 
 
 AutomaticDoor dvere(5);
-
 WebServer server(80);
-
-
-//  String to int
-int stoi(String s)
-{   
-    return s.toInt();
-}
 
 
 void handleNotFound() {
@@ -74,22 +66,22 @@ void handleRoot() {
 
 void handleGet() {
 
-  if (server.arg(OpenH)) {     
-    dvere.setHourOpen(stoi(server.arg(OpenH)));
-    dvere.setMinuteOpen(stoi(server.arg(OpenM)));
+  if (server.argName(0)==OpenH) {     
+    dvere.setHourOpen(stoi(server.arg(0)));
+    dvere.setMinuteOpen(stoi(server.arg(1)));
     Serial.println(OpenH);
     Serial.println(dvere.getTimeOpen());
   }
   // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
-  else if (server.arg(CloseH)) {
-    dvere.setHourClose(stoi(server.arg(CloseH)));
-    dvere.setMinuteClose(stoi(server.arg(CloseM)));
+  else if (server.argName(0) == CloseH) {
+    dvere.setHourClose(stoi(server.arg(0)));
+    dvere.setMinuteClose(stoi(server.arg(1)));
     Serial.println(CloseH);
     Serial.println(dvere.getTimeClose());
   }
-  else if (server.arg(ActualH)) {
-    int h = (stoi(server.arg(ActualH)));
-    int m = (stoi(server.arg(ActualM)));
+  else if (server.argName(0) == ActualH) {
+    int h = (stoi(server.arg(0)));
+    int m = (stoi(server.arg(1)));
     dvere.setActualTime(h, m);
     Serial.println(ActualH);
     Serial.printf("%d:%d",h, m);
@@ -99,6 +91,7 @@ void handleGet() {
     dprintf("No parameter send");
     return;
   }
+  dvere.readEEP();
   server.send(200, "text/html", "<h1>Nastaveni bylo upraveno</h1><br><a href=\"/\">Zpet na Nastaveni</a>");
 }
 
@@ -117,6 +110,10 @@ void setup() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
 
+  if (MDNS.begin("kurnik")) {
+    Serial.println("MDNS responder started");
+  }
+
 
   dvere.printDateTime();
 
@@ -133,7 +130,7 @@ void setup() {
 
   // dvere.setHourOpen(17);
   // dvere.setMinuteOpen(35);
-  // dvere.setHourClose(19);
+  dvere.setHourClose(19);
   // dvere.setMinuteClose(51);
   //Serial.println(dvere.ret());
 
@@ -152,7 +149,7 @@ void loop() {
   //Auto open/close thread
   if(NowTime-LastAutoTime>=AutoTime)
   {
-    dprintf("AutoTime");
+    //dprintf("AutoTime");
     if(dvere.timeToOpen())
     {
       dvere.open();

@@ -1,8 +1,15 @@
 #include <Arduino.h>
 
+//  String to int
+int stoi(String s)
+{   
+    return s.toInt();
+}
+
 const char page_intro[] PROGMEM = R"rawliteral(
   <!DOCTYPE HTML><html><head>
     <title>ESP Input Form</title>
+    <meta http-equiv="pragma" content="no-cache" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     </head><body>
