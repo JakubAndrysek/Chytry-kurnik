@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "timercpp.h"
 
 #define EEPROM_SIZE 10
 int a = 0, b =1;

@@ -12,6 +12,22 @@
 #define RELAY_B 33
 #define EEPROM_SIZE 10
 
+//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##
+  // Pomucka pro ladeni. Pokud to nepouzijete, klidne to smazte.
+
+  // Po odkomentovani se nebudou tisknout ladici zpravy.
+  // #define NDEBUG
+
+  // Prikaz dprintf pro tisk ladicich zprav. Funguje stejne jako printf,
+  // ale jde jej globalne vypnout odkomentovanim definice symbolu NDEBUG.
+  // Vhodny pro povidani s uzivatelem v prubehu ladeni.
+  #ifdef NDEBUG
+    #define dprintf(...)
+  #else
+    #define dprintf(...) Serial.printf(__VA_ARGS__);Serial.println()
+  #endif //NDEBUG
+//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##
+
 class AutomaticDoor : public RtcDS3231<TwoWire>, public RtcDateTime
 {
     private:
@@ -29,8 +45,8 @@ class AutomaticDoor : public RtcDS3231<TwoWire>, public RtcDateTime
         bool _closeState;
         int oState = 0;
         int cState = 0;
-        int oTime = 0;
-        int cTime = 0;
+        long long oTime = 0;
+        long long cTime = 0;
         //EEPROM ADRESS
         int EEoM = 0;
         int EEoH = 1;
@@ -62,7 +78,6 @@ class AutomaticDoor : public RtcDS3231<TwoWire>, public RtcDateTime
         void rUp();
         void rDown();
         void rStop();
-        int ret();
 
     
 };

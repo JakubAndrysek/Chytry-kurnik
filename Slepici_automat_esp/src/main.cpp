@@ -7,6 +7,8 @@
 #include <EEPROM.h>
 
 
+
+
 const char* ssid = "Kurnik";
 const char* password = "NaseSlepice";
 
@@ -19,13 +21,20 @@ const char* ActualM = "act-m";
 
 const char* Move = "move";
 
+int NowTime  = 0;
+long LastAutoTime = 0;
+int AutoTime = 700;
+
+long LastMesageTime = 0;
+int MesageTime = 1000;
+
 
 AutomaticDoor dvere(5);
 
-AsyncWebServer server(80);
-DNSServer gDnsServer;
+// AsyncWebServer server(80);
+// DNSServer gDnsServer;
 
-
+/*
 // HTML web page to handle 3 input fields (input1, input2, input3)
 const char index_html[] PROGMEM = R"rawliteral(
   <!DOCTYPE HTML><html><head>
@@ -93,29 +102,22 @@ void notFound(AsyncWebServerRequest *request) {
 void serverRun()
 {
   // Send web page with input fields to client
-  /*
+  
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html);
   });
-*/
-  //String time_web = "<h1>" + String(dvere.getHour)+":"+String(dvere.getMinute)+"</h1><p><a href=\"/\">Zpet</p>";
 
-/*
-  server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request){
-    AsyncResponseStream *response = request->beginResponseStream("text/plain");
-    response->printf("Cas\n%d:%d", dvere.getHour,5);
-
-  });  
-*/
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
       // "Streamovaná" odpověď, zapisuje se průběžně.
       AsyncResponseStream *response = request->beginResponseStream("text/html");
       int h = dvere.getHour();
       int m = dvere.getMinute();
-      response->printf("<h3>%d:%d</h3>", h, m);
-      response->printf("Cas od zapnuti %d",(int(millis()/1000))); 
+      response->printf("<h3>Aktualni cas: %d:%d</h3>", h, m);
+
       response->println(index_html);   
+      response->printf("Cas od zapnuti %d",(int(millis()/1000))); 
+
 
 
       request->send(response);
@@ -163,21 +165,22 @@ void serverRun()
   server.onNotFound(notFound);
   server.begin();  
 }
-
+*/
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Start");
+  dprintf("DEBUG JEDE!!!");
   
   EEPROM.begin(EEPROM_SIZE);
   dvere.begin();
   
-
+/*
   WiFi.softAP(ssid, password);
   Serial.println();
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
-
+*/
 
   dvere.printDateTime();
 
@@ -198,27 +201,38 @@ void setup() {
 void loop() {
  
 
-  //if()
+  NowTime = millis();
   
-  dvere.printDateTime();
-  delay(1000);
+  
+  //delay(1000);
 
-
-
-  if(dvere.timeToOpen())
+  if(NowTime-LastAutoTime>=AutoTime)
   {
-    dvere.open();
-    Serial.println("Open function");
+    dprintf("AutoTime");
+    if(dvere.timeToOpen())
+    {
+      dvere.open();
+      dprintf("Open function");
+    }
+
+    if(dvere.timeToClose())
+    {
+      dvere.close();
+      dprintf("Close function");
+    }
+    LastAutoTime = NowTime;
   }
 
-  if(dvere.timeToClose())
+  if(NowTime-LastMesageTime>=MesageTime)
   {
-    dvere.close();
-    Serial.println("Close function");
+    //dprintf("Message");
+    dvere.printDateTime();
+    LastMesageTime = NowTime;
   }
 
-   serverRun();
 
+
+   //serverRun();
 
 
 
