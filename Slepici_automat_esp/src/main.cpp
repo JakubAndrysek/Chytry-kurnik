@@ -28,13 +28,16 @@ int AutoTime = 700;
 long LastMesageTime = 0;
 int MesageTime = 1000;
 
+long LastWebTime = 0;
+int WebTime = 50;
+
 
 AutomaticDoor dvere(5);
 
-// AsyncWebServer server(80);
-// DNSServer gDnsServer;
+AsyncWebServer server(80);
+//DNSServer gDnsServer;
 
-/*
+
 // HTML web page to handle 3 input fields (input1, input2, input3)
 const char index_html[] PROGMEM = R"rawliteral(
   <!DOCTYPE HTML><html><head>
@@ -88,10 +91,9 @@ const char index_html[] PROGMEM = R"rawliteral(
 )rawliteral";
 
 
-
+//  String to int
 int stoi(String s)
-{
-    
+{   
     return s.toInt();
 }
 
@@ -103,7 +105,7 @@ void serverRun()
 {
   // Send web page with input fields to client
   
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/home", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html);
   });
 
@@ -165,7 +167,7 @@ void serverRun()
   server.onNotFound(notFound);
   server.begin();  
 }
-*/
+
 
 void setup() {
   Serial.begin(115200);
@@ -175,12 +177,12 @@ void setup() {
   EEPROM.begin(EEPROM_SIZE);
   dvere.begin();
   
-/*
+
   WiFi.softAP(ssid, password);
   Serial.println();
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
-*/
+
 
   dvere.printDateTime();
 
@@ -203,9 +205,8 @@ void loop() {
 
   NowTime = millis();
   
-  
-  //delay(1000);
 
+  //Auto open/close thread
   if(NowTime-LastAutoTime>=AutoTime)
   {
     dprintf("AutoTime");
@@ -223,6 +224,7 @@ void loop() {
     LastAutoTime = NowTime;
   }
 
+  //Message thread
   if(NowTime-LastMesageTime>=MesageTime)
   {
     //dprintf("Message");
@@ -230,9 +232,16 @@ void loop() {
     LastMesageTime = NowTime;
   }
 
+  //Web thread
+  if(NowTime-LastWebTime>=WebTime)
+  {
+    serverRun();
+    LastWebTime = NowTime;
+  }
 
 
-   //serverRun();
+
+   
 
 
 
