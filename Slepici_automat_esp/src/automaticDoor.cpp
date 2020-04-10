@@ -24,6 +24,10 @@ AutomaticDoor::AutomaticDoor(int tMove) :  RtcDS3231<TwoWire>(Wire)
     digitalWrite(RELAY_A, true);
     digitalWrite(RELAY_B, true); 
     dprintf("Door constructor");
+    pinMode(BUTTON_E1, INPUT_PULLUP);
+    pinMode(BUTTON_E2, INPUT_PULLUP);
+    pinMode(BUTTON_UP, INPUT_PULLUP);
+    pinMode(BUTTON_DOWN, INPUT_PULLUP);
     delay(500);
     
    
@@ -78,33 +82,42 @@ int AutomaticDoor::getSecond()
     return dt.Second();
 }
 
+bool AutomaticDoor::getButtonEnd1()
+{
+    return digitalRead(BUTTON_E1);
+}
+
+bool AutomaticDoor::getButtonEnd2()
+{
+    return digitalRead(BUTTON_E2);
+}
+
+bool AutomaticDoor::getButtonUp()
+{
+    return digitalRead(BUTTON_UP);
+}
+
+bool AutomaticDoor::getButtonDown()
+{
+    return digitalRead(BUTTON_DOWN);
+}
+
 void AutomaticDoor::open()
 {
     Serial.println("Opening");
-
-    switch (oState)
+    oTime = millis()/1000; //to seconds
+    while(getButtonEnd1())
     {
-    case 0:
-        oTime = millis()/1000; //to seconds
-        dprintf("Opening-Begin");
-        oState++;   //next state
-        break;
-    case 1:
-        dprintf("Opening-Start");
         rUp();
-        delay(_tMove);
-        rStop();
-        oState++;
-        break;
-    
-    case 2:
-        dprintf("Opening-Ending");
-        if(millis()/1000-oTime>60)    //for one door opening
+        dprintf("Door opning");
+        
+        if(millis()/1000-oTime>OPEN_LIMIT)
         {
-            oState = 0;
+            break;
         }
-        break;
     }
+    rStop();        
+
 }
 
 void AutomaticDoor::close()
@@ -114,29 +127,18 @@ void AutomaticDoor::close()
     // delay(_tMove);
     // rStop();
 
-    switch (cState)
+    cTime = millis()/1000;
+    while(getButtonEnd2())
     {
-    case 0:
-        cTime = millis()/1000; //to seconds
-        cState++;   //next state
-        dprintf("Closing-Begin");
-        break;
-    case 1:
-        dprintf("Closing-Start");    
         rDown();
-        delay(_tMove);
-        rStop();
-        cState++;
-        break;
-    
-    case 2:
-        dprintf("Closing-Ending");
-        if(millis()/1000-cTime>60)    //for one door opening
+        dprintf("Door closeing");
+        
+        if(millis()/1000-cTime>OPEN_LIMIT)
         {
-            cState = 0;
+            break;
         }
-        break;
     }
+    rStop();      
 
 }
 
@@ -144,11 +146,10 @@ bool AutomaticDoor::timeToOpen()
 {
     _minuteNow = getMinute();
     _hourNow = getHour();
+    _secondNow = getSecond();
 
-    if(_minuteNow == _minuteOpen && _hourNow == _hourOpen)
+    if(_minuteNow == _minuteOpen && _hourNow == _hourOpen && _secondNow == 0)
     {
-        _minuteLast = _minuteNow;
-        _hourLast = _hourNow;
         return true;
     }
 
@@ -159,15 +160,28 @@ bool AutomaticDoor::timeToClose()
 {
     _minuteNow = getMinute();
     _hourNow = getHour();
+    _secondNow = getSecond();
     //Serial.printf("Now-H%d M%d; Last-H%d M%d; state%d; Poz-H%d M%d\n", _hourNow,_minuteNow,_hourNow,_minuteLast,_closeState,_hourClose,_minuteClose);
 
 
-    if(_minuteNow == _minuteClose && _hourNow == _hourClose )
+    if(_minuteNow == _minuteClose && _hourNow == _hourClose && _secondNow == 0)
     {
-        _minuteLast = _minuteNow;
-        _hourLast = _hourNow;
         return true;
     }
+    return false;    
+}
+
+bool AutomaticDoor::timeToReboot()
+{
+    _minuteNow = getMinute();
+    _hourNow = getHour();
+    _secondNow = getSecond();
+
+    if(_minuteNow == 0 && _hourNow == 0 && _secondNow == 1)
+    {
+        return true;
+    }
+
     return false;    
 }
 

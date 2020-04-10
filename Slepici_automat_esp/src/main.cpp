@@ -8,7 +8,7 @@
 
 
 
-const char* ssid = "Chytry-kurnik:-)";
+const char* ssid = "Chytry-kurnik";
 const char* password = "naseslepice";
 
 const char* OpenH = "open-h";
@@ -22,7 +22,7 @@ const char* Move = "move";
 
 int NowTime  = 0;
 long LastAutoTime = 0;
-int AutoTime = 700;
+int AutoTime = 200;
 
 long LastMesageTime = 0;
 int MesageTime = 1000;
@@ -110,7 +110,7 @@ void setup() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
 
-  if (MDNS.begin("kurnik")) {
+  if (MDNS.begin("esp")) {
     Serial.println("MDNS responder started");
   }
 
@@ -130,7 +130,7 @@ void setup() {
 
   // dvere.setHourOpen(17);
   // dvere.setMinuteOpen(35);
-  dvere.setHourClose(19);
+  // dvere.setHourClose(19);
   // dvere.setMinuteClose(51);
   //Serial.println(dvere.ret());
 
@@ -152,15 +152,34 @@ void loop() {
     //dprintf("AutoTime");
     if(dvere.timeToOpen())
     {
-      dvere.open();
       dprintf("Open function");
+      dvere.open();
     }
-
     if(dvere.timeToClose())
     {
-      dvere.close();
       dprintf("Close function");
+      dvere.close();
     }
+    
+    if(!dvere.getButtonUp())
+    {
+      dprintf("Open function-button");
+      delay(200);
+      dvere.open();
+    }
+
+    if(!dvere.getButtonDown())
+    {
+      dprintf("Close function-button");
+      delay(200);
+      dvere.close();
+    }
+    if(dvere.timeToReboot())
+    {
+      dprintf("REBOOTING!!!");
+      ESP.restart();
+    }
+
     LastAutoTime = NowTime;
   }
 

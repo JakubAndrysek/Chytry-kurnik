@@ -11,6 +11,12 @@
 #define RELAY_A 32
 #define RELAY_B 33
 #define EEPROM_SIZE 10
+#define BUTTON_E1 26
+#define BUTTON_E2 26
+#define OPEN_LIMIT 5
+#define BUTTON_UP 13
+#define BUTTON_DOWN 26
+
 
 //##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##
   // Pomucka pro ladeni. Pokud to nepouzijete, klidne to smazte.
@@ -60,10 +66,15 @@ class AutomaticDoor : public RtcDS3231<TwoWire>, public RtcDateTime
         int getHour();
         int getMinute();
         int getSecond();
+        bool getButtonEnd1();
+        bool getButtonEnd2();
+        bool getButtonUp();
+        bool getButtonDown();
         void open();
         void close();
         bool timeToOpen();
         bool timeToClose();
+        bool timeToReboot();
         void printDateTime();
         void setHourOpen(int hour);
         void setMinuteOpen(int minute);
