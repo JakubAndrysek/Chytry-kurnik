@@ -1,16 +1,15 @@
 #include <Arduino.h>
 #include "automaticDoor.hpp"
 #include <WiFi.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <DNSServer.h>
 #include <EEPROM.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include "webpage.h"
 
 
 
-
-const char* ssid = "Kurnik";
-const char* password = "NaseSlepice";
+const char* ssid = "Chytry-kurnik:-)";
+const char* password = "naseslepice";
 
 const char* OpenH = "open-h";
 const char* OpenM = "open-m";
@@ -34,61 +33,7 @@ int WebTime = 50;
 
 AutomaticDoor dvere(5);
 
-AsyncWebServer server(80);
-//DNSServer gDnsServer;
-
-
-// HTML web page to handle 3 input fields (input1, input2, input3)
-const char index_html[] PROGMEM = R"rawliteral(
-  <!DOCTYPE HTML><html><head>
-    <title>ESP Input Form</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head><body>
-    <h1>Já jsem chytrý kurník</h1>
-    <p>Naše slepice mají webové stránky :-)</p>
-    <h4>By Kuba Andrysek<h4>
-
-    <h2>Nastavení</h2>
-    <h3>Čas otevření kurníku:</h3>
-    <form action="/get">
-      Hodiny: <input type="number" name="open-h">
-      <br>
-      Minuty: <input type="number" name="open-m">
-      <br>
-      <br>
-      <input type="submit" value="Submit">
-    </form><br>
-
-    <h3>Čas zavření kurníku</h3>
-    <form action="/get">
-      Hodiny: <input type="number" name="close-h">
-      <br>
-      Minuty: <input type="number" name="close-m">
-      <br>
-      <br>
-      <input type="submit" value="Submit">
-    </form><br>
-
-    <h3>Aktuální čas:</h3>
-    <form action="/get">
-      Hodiny: <input type="number" name="act-h">
-      <br>
-      Minuty: <input type="number" name="act-m">
-      <br>
-      <br>
-      <input type="submit" value="Submit">
-    </form><br>    
-
-    <h3>Doba otevíráni/zavírání</h3>
-    <form action="/get">
-      Vteřin: <input type="number" name="move">
-      <br>
-      <br>
-      <input type="submit" value="Submit">
-    </form>
-  </body></html>
-)rawliteral";
+WebServer server(80);
 
 
 //  String to int
@@ -97,75 +42,64 @@ int stoi(String s)
     return s.toInt();
 }
 
-void notFound(AsyncWebServerRequest *request) {
-  request->send(404, "text/plain", "Not found");
+
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+    String arg = " " + server.argName(i) + ": " + server.arg(i) + "\n";
+    Serial.println(arg);
+  }
+  server.send(404, "text/plain", message);
 }
 
-void serverRun()
-{
-  // Send web page with input fields to client
-  
-  server.on("/home", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/html", index_html);
-  });
 
+void handleRoot() {
+  String page ;
+  page += page_intro;
+  page += "<h3>Čas otevření kurníku "+ dvere.getTimeOpen() + "</h3>" + page_open;
+  page += "<h3>Čas zavření kurníku "+ dvere.getTimeClose() + "</h3>" + page_close;
+  page += "<h3>Aktuální čas "+ String(dvere.getHour()) + ":" + String(dvere.getMinute())+ "</h3>" + page_time;
+  page += page_end;
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      // "Streamovaná" odpověď, zapisuje se průběžně.
-      AsyncResponseStream *response = request->beginResponseStream("text/html");
-      int h = dvere.getHour();
-      int m = dvere.getMinute();
-      response->printf("<h3>Aktualni cas: %d:%d</h3>", h, m);
+  server.send(200, "text/html", page);
+}
 
-      response->println(index_html);   
-      response->printf("Cas od zapnuti %d",(int(millis()/1000))); 
+void handleGet() {
 
-
-
-      request->send(response);
-    });
-
-
-  // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
-  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
-    String inputMessage;
-    String inputParam;
-    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
-    if (request->hasParam(OpenH)) {     
-      dvere.setHourOpen(stoi(request->getParam(OpenH)->value()));
-      dvere.setMinuteOpen(stoi(request->getParam(OpenM)->value()));
-      Serial.println(OpenH);
-      Serial.println(dvere.getTimeOpen());
-    }
-    // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
-    else if (request->hasParam(CloseH)) {
-      dvere.setHourClose(stoi(request->getParam(CloseH)->value()));
-      dvere.setMinuteClose(stoi(request->getParam(CloseM)->value()));
-      Serial.println(CloseH);
-      Serial.println(dvere.getTimeClose());
-    }
-    else if (request->hasParam(ActualH)) {
-      int h = (stoi(request->getParam(ActualH)->value()));
-      int m = (stoi(request->getParam(ActualM)->value()));
-      dvere.setActualTime(h, m);
-      Serial.println(ActualH);
-      Serial.printf("%d:%d",h, m);
-    }    
-    // GET input3 value on <ESP_IP>/get?input3=<inputMessage>
-    else if (request->hasParam(Move)) {
-      dvere.setMove(stoi(request->getParam(Move)->value()));
-      Serial.println(Move);
-      Serial.println(dvere.getMove());
-    }
-    else {
-      inputMessage = "No message sent";
-      inputParam = "none";
-    }
-    Serial.println(inputMessage);
-    request->send(200, "text/html", "Nastaveni bylo upraveno<br><a href=\"/\">Zpet na Nastaveni</a>");
-  });
-  server.onNotFound(notFound);
-  server.begin();  
+  if (server.arg(OpenH)) {     
+    dvere.setHourOpen(stoi(server.arg(OpenH)));
+    dvere.setMinuteOpen(stoi(server.arg(OpenM)));
+    Serial.println(OpenH);
+    Serial.println(dvere.getTimeOpen());
+  }
+  // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
+  else if (server.arg(CloseH)) {
+    dvere.setHourClose(stoi(server.arg(CloseH)));
+    dvere.setMinuteClose(stoi(server.arg(CloseM)));
+    Serial.println(CloseH);
+    Serial.println(dvere.getTimeClose());
+  }
+  else if (server.arg(ActualH)) {
+    int h = (stoi(server.arg(ActualH)));
+    int m = (stoi(server.arg(ActualM)));
+    dvere.setActualTime(h, m);
+    Serial.println(ActualH);
+    Serial.printf("%d:%d",h, m);
+  }    
+  else {
+    server.send(200, "text/html", "Nekde nastala chyba");
+    dprintf("No parameter send");
+    return;
+  }
+  server.send(200, "text/html", "<h1>Nastaveni bylo upraveno</h1><br><a href=\"/\">Zpet na Nastaveni</a>");
 }
 
 
@@ -185,6 +119,15 @@ void setup() {
 
 
   dvere.printDateTime();
+
+  server.on("/", handleRoot);
+
+  server.on("/get", handleGet);
+    
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("HTTP server started");
 
   //dvere.setActualTime(20, 30);
 
@@ -235,7 +178,7 @@ void loop() {
   //Web thread
   if(NowTime-LastWebTime>=WebTime)
   {
-    serverRun();
+    server.handleClient();    
     LastWebTime = NowTime;
   }
 
