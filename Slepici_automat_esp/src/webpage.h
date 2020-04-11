@@ -56,6 +56,7 @@ const char page_time[] PROGMEM = R"rawliteral(
 )rawliteral";
 
 const char page_end[] PROGMEM = R"rawliteral(
+    <p>Uvedeno do provozu 11. 4. 2020</p>
     </body></html>
 )rawliteral";
 

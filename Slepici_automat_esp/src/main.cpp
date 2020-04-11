@@ -110,7 +110,7 @@ void setup() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
 
-  if (MDNS.begin("esp")) {
+  if (MDNS.begin("kurnik")) {
     Serial.println("MDNS responder started");
   }
 

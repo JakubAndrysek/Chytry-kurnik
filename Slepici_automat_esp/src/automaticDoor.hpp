@@ -8,14 +8,14 @@
 //#include <DNSServer>
 
 
-#define RELAY_A 32
-#define RELAY_B 33
+#define RELAY_A 18
+#define RELAY_B 19
 #define EEPROM_SIZE 10
-#define BUTTON_E1 26
-#define BUTTON_E2 26
+#define BUTTON_E1 5
+#define BUTTON_E2 17
 #define OPEN_LIMIT 5
-#define BUTTON_UP 13
-#define BUTTON_DOWN 26
+#define BUTTON_UP 16
+#define BUTTON_DOWN 4
 
 
 //##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##//##
