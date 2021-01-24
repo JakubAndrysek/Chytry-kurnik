@@ -144,6 +144,15 @@ void loop() {
  
 
   NowTime = millis();
+
+  // while (1)
+  // {
+  //   Serial.printf("Up: %d; Down: %d; E1: %d; E2: %d \n", dvere.getButtonUp(), dvere.getButtonDown(), dvere.getButtonEnd1(), dvere.getButtonEnd2());
+
+
+  //   delay(500);
+  // }
+  
   
 
   //Auto open/close thread
